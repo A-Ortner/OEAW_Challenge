@@ -5,10 +5,17 @@
     </button>
     <p v-if="this.error">{{ this.errorMsg }}</p>
     <div v-if="!this.error">
-      <p>Stelle {{ this.passage.display_label }}</p>
+      <h2 id="Stelle">
+        <small>Stelle:</small>
+        {{ this.passage.display_label }}
+      </h2>
+
       <br><br>
       <ul id="ul_basic_info"><p id="basicinfo"> Basic Information</p>
-        <li class="basic_keywords" v-for="keyword in this.keywords" :key="keyword.legacy_id">{{ keyword.stichwort }}</li>
+        <li class="basic_keywords" v-for="keyword in this.keywords" :key="keyword.legacy_id">{{
+            keyword.stichwort
+          }}
+        </li>
       </ul>
       <table>
         <tr>
@@ -124,6 +131,14 @@ export default {
 #basicinfo {
   font-size: 1.5rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+#Stelle {
+  background: lightgray;
+  margin: 0;
+  padding: 3rem;
+  width: 100%;
+
 }
 
 #ul_basic_info {
