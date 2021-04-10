@@ -22,7 +22,7 @@ main {
   padding-left: 2rem;
   width: 100%;
   display: flex;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   border-bottom: 5px solid #254aa5;
   border-top: 5px solid #254aa5;
 }
@@ -32,5 +32,14 @@ main {
   font-size: 4rem;
   margin: auto;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+@media screen and (max-width: 600px) {
+  .title{
+    text-align: center;
+    font-size: 2rem;
+    margin: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  }
 }
 </style>
