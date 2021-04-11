@@ -7,18 +7,18 @@
           class="search"
           type="search"
           v-model.trim="query"
-          placeholder="Search the collection"
+          placeholder="Search the Collection"
           aria-labelledby="search-button"
       />
       <input
           id="input-limit"
           class="search"
           type="number"
-          v-model.trim="limit"
-          placeholder="entries per page"
+          v-model="limit"
+          placeholder="Entries per Page"
           aria-labelledby="search-button"
       />
-      <button class="search" v-on:click="search()" id="search-button">Search</button> <!--type="submit"-->
+      <button class="search" v-on:click="search()" id="search-button">SEARCH</button> <!--type="submit"-->
     </form>
 
     <h3 id="error-message" v-if="error">{{ errorMsg }}</h3>
@@ -33,11 +33,6 @@
           <th>Authors</th>
         </tr>
         <tr v-for="fullpassage in passageElements" :key="fullpassage.passage.legacy_id" :fullpassage="fullpassage">
-          <!--          <td>
-                      <router-link class="nav-link" :to="'details/' +getPassageId(fullpassage.passage)">
-                        {{ fullpassage.passage.text.title }}
-                      </router-link>
-                    </td>-->
           <td>
             <button v-on:click="openNewWindow(fullpassage.passage)"
                     class="linkDetails"> {{ fullpassage.passage.text.title }}
@@ -52,8 +47,9 @@
         </tr>
       </table>
       <div class="pagination_buttons">
-        <button id="previous" v-on:click="loadPreviousPage()">previous</button>
-        <button id="next" v-on:click="loadNextPage()">next</button>
+        <button v-if="currentPage>1" id="previous" v-on:click="loadPage(0)"> &lt; PREVIOUS</button>
+        <p id="page">page {{this.currentPage}} of {{Math.round(this.numberPassages/this.limit)}}</p>
+        <button id="next" v-on:click="loadPage(1)">NEXT &gt;</button>
       </div>
     </section>
   </main>
@@ -62,7 +58,7 @@
 <script>
 import * as OEAWService from "@/services/OEAWService";
 
-const WELCOME_MESSAGE = "Search our collection of medieval manuscipts here!"
+const WELCOME_MESSAGE = "Search our Collection of Medieval Manuscipts here!"
 const DEFAULT_MESSAGE = "Nothing to search for - yet.";
 
 export default {
@@ -71,25 +67,30 @@ export default {
   data() {
     return {
       query: "",
+      apiQuery: "",
       limit: null,
+      apiLimit: null,
       showTable: false,
       searchMessage: DEFAULT_MESSAGE,
       welcomeMessage: WELCOME_MESSAGE,
+      numberPassages: 0,
       passages: [],
       passageElements: [],
       next: "",
       previous: "",
+      currentPage: 1,
       error: false,
       errorMsg: ""
     };
-  }
-  , computed: {},
+  }, computed: {},
   methods: {
     search() {
+      console.log("search()");
       this.showTable = false;
       this.error = false;
       this.passages = [];
       this.passageElements = [];
+      this.currentPage = 1;
 
       if (this.query) {
         this.searchMessage = `Searching for “${this.query}”`;
@@ -97,19 +98,22 @@ export default {
         this.searchMessage = DEFAULT_MESSAGE;
       }
 
-      if (this.validateLimit() === 1) {
-        this.error = true;
-        return;
-      }
       if (this.validateZitat() === 1) {
         this.error = true;
         return;
       }
-      OEAWService.getPassages(this.query, this.limit).then(passages => {
-        console.log("called service");
+      if (this.validateLimit() === 1) {
+        this.error = true;
+        return;
+      }
+      this.formQuery();
+
+      OEAWService.getPassages(this.apiQuery, this.apiLimit).then(passages => {
+        console.log(passages);
         this.passages = passages.results;
         this.next = passages.next;
         this.previous = passages.previous;
+        this.numberPassages = passages.count;
         this.passages.forEach(x => {
 
           OEAWService.getAuthor(x.text.autor[0]).then(author => {
@@ -118,92 +122,132 @@ export default {
                   passage: x,
                   author: author
                 });
+          }).catch(e => {
+            //author can be not set, so here only an error is logged
+            console.log(e);
           });
 
         });
-        console.log("passage elements:");
-        console.log(this.passageElements);
 
         if (this.passages.length > 0) {
           this.showTable = true;
+          if (this.query) {
+            const s = this.passages.length == 1 ? "" : "s";
+            this.searchMessage = `Found ${this.numberPassages} passage${s} for “${this.query}”`;
+          }
+        } else {
+          console.log(this.passages.length);
+          this.searchMessage = "No passages found for \"" + this.query + "\"";
         }
-        if (this.query) {
-          const s = this.passages.length == 1 ? "" : "s";
-          this.searchMessage = `Found passage${s} for “${this.query}”`;
-        }
+
+      }).catch(e => {
+        console.log(e);
+        this.errorMsg = "Could not fetch data from server.";
+        this.error = true;
       });
     },
-    loadNextPage() {
+    loadPage(direction) {
+      console.log("loadPage()", direction);
       //reset table
       this.showTable = false;
       this.passages = [];
       this.passageElements = [];
 
-      //
-      OEAWService.getPage(this.next).then(passages => {
-        console.log("called service");
-        this.passages = passages.results;
-        this.next = passages.next;
-        this.previous = passages.previous;
-        this.passages.forEach(x => {
+      //next
+      if(direction === 1){
+        OEAWService.getPage(this.next).then(passages => {
+          this.passages = passages.results;
+          this.next = passages.next;
+          this.previous = passages.previous;
+          this.passages.forEach(x => {
 
-          OEAWService.getAuthor(x.text.autor[0]).then(author => {
-            this.passageElements.push(
-                {
-                  passage: x,
-                  author: author
-                });
+            OEAWService.getAuthor(x.text.autor[0]).then(author => {
+              this.passageElements.push(
+                  {
+                    passage: x,
+                    author: author
+                  });
+              }).catch(e => {
+              console.log(e);
+            });
+
           });
-
+          this.currentPage += 1;
+          this.showTable = true;
+        }).catch(e => {
+          console.log(e);
+          this.errorMsg = "Could not fetch data from server.";
+          this.error = true;
         });
-        console.log("passage elements:");
+      }
 
-        console.log(this.passageElements);
-        this.showTable = true;
-      });
-    },
-    loadPreviousPage() {
-      //reset table
-      this.showTable = false;
-      this.passages = [];
-      this.passageElements = [];
+      //previous
+      if(direction === 0){
+        OEAWService.getPage(this.next).then(passages => {
+          this.passages = passages.results;
+          this.next = passages.next;
+          this.previous = passages.previous;
+          this.passages.forEach(x => {
 
-      //
-      OEAWService.getPage(this.next).then(passages => {
-        console.log("called service");
-        this.passages = passages.results;
-        this.next = passages.next;
-        this.previous = passages.previous;
-        this.passages.forEach(x => {
+            OEAWService.getAuthor(x.text.autor[0]).then(author => {
+              this.passageElements.push(
+                  {
+                    passage: x,
+                    author: author
+                  })
+              }).catch(e => {
+              console.log(e);
+            });
 
-          OEAWService.getAuthor(x.text.autor[0]).then(author => {
-            this.passageElements.push(
-                {
-                  passage: x,
-                  author: author
-                });
           });
-
+          this.currentPage -= 1;
+          this.showTable = true;
+        }).catch(e => {
+          console.log(e);
+          this.errorMsg = "Could not fetch data from server.";
+          this.error = true;
         });
-        console.log("passage elements:");
+      }
 
-        console.log(this.passageElements);
-        this.showTable = true;
-      });
     },
     validateLimit() {
-      if (this.limit === null) {
-        this.limit = 20;
+      if (this.limit === null || this.limit === ""){
+        return;
       }
       if (this.limit <= 0) {
         this.errorMsg = "Please enter a limit that is greater than zero.";
         return 1;
       }
+      if (this.limit >= 100) {
+        //for performance, the limit is restricted to 100
+        this.errorMsg = "Please enter a limit that is less than 100.";
+        return 1;
+      }
+
     },
     validateZitat() {
       if (this.query === null || this.query === "") {
-        this.errorMsg = "Please enter at least one letter to search for.";
+        this.errorMsg = "Please enter at least one character to search for.";
         return 1;
+      }
+      if (this.query.length > 512) {
+        this.errorMsg = "Please do not enter more than 512 characters."
+        return 1;
+      }
+    },
+    formQuery() {
+      //zitat
+      if (this.query.includes(" ")) {
+        this.apiQuery = this.query.replace(/\s/g, "&");
+      } else {
+        this.apiQuery = this.query;
+      }
+
+      //limit
+      if (this.limit === null || this.limit === "") {
+        this.apiLimit = 20;
+      } else {
+        this.apiLimit = this.limit;
       }
     },
     getLabel(passage) {
@@ -227,11 +271,10 @@ export default {
     },
     getAuthor(passage) {
       console.log("getAuthor()");
-      console.log(passage);
       OEAWService.getAuthor(passage.text.autor[0]).then(author => {
-        console.log(author);
-        console.log(author.name);
         return author.name;
+      }).catch(e => {
+        console.log(e);
       });
     },
     getPassageId(passage) {
@@ -244,9 +287,6 @@ export default {
       console.log("openNewWindow()");
       const id = this.getPassageId(passage);
       if (id) {
-        console.log(id)
-        console.log(window.location.href);
-        console.log(window.location.href + 'details/' + id);
         window.open(window.location.href + 'details/' + id);
       }
     }
@@ -286,6 +326,15 @@ main {
 
 #error-message {
   color: red;
+  width: fit-content;
+  background: #d9d9d9;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  position: center;
+  padding: 1rem;
+  border: red;
+  box-shadow: 0 0.3rem 0.1rem -0.2rem rgba(0, 0, 0, .2), 0 0.2rem 0.2rem 0 rgba(0, 0, 0, .14), 0 0.1rem 0.5rem 0 rgba(0, 0, 0, .12);
+  border: 0.1rem solid;
 }
 
 form {
@@ -365,15 +414,22 @@ table tr:first-child:hover {
 }
 
 .pagination_buttons {
-  display: flex;
+  display: inline-flex;
   margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+#page {
+  padding-left: 3rem;
+  padding-right: 3rem;
+  font-size: 0.8rem;
+  align-self: center;
 }
 
 #previous, #next {
   display: inline-flex;
   margin: auto;
-  margin-bottom: 1rem;
-  padding: 0.2rem;
+  padding: 1rem;
   border-radius: 0.5rem;
   box-shadow: 0 0.3rem 0.1rem -0.2rem rgba(0, 0, 0, .2), 0 0.2rem 0.2rem 0 rgba(0, 0, 0, .14), 0 0.1rem 0.5rem 0 rgba(0, 0, 0, .12);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
