@@ -53,7 +53,7 @@ export async function getAuthor(request = '') {
  * @return promise/specified passage
  */
 export async function getPassageById(id = null) {
-    console.log('getPassageByLegacyId()', id);
+    console.log('getPassageById()', id);
     if (id == null) return;
     console.log(OEAW_BASE_URL + 'stelle/' + id.toString())
     const res = await fetch(OEAW_BASE_URL + 'stelle/' + id.toString());
