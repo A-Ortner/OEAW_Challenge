@@ -1,7 +1,7 @@
 <template>
   <main>
     <router-link class="nav-link" to="/">
-    <img src=".././assets/acdh-ch-logo96.png" alt="acdh-logo">
+      <img src=".././assets/acdh-ch-logo96.png" alt="acdh-logo">
     </router-link>
     <p class="title">MMP - Medieval Manuscripts</p>
   </main>
@@ -16,7 +16,7 @@ export default {
 <style scoped>
 main {
   background: #f1f1f1;
-  margin-top: 0rem;
+  margin-top: 0;
   padding-top: 1rem;
   padding-bottom: 1rem;
   padding-left: 2rem;
@@ -27,7 +27,7 @@ main {
   border-top: 5px solid #254aa5;
 }
 
-.title{
+.title {
   text-align: center;
   font-size: 4rem;
   margin: auto;
@@ -35,7 +35,7 @@ main {
 }
 
 @media screen and (max-width: 600px) {
-  .title{
+  .title {
     text-align: center;
     font-size: 2rem;
     margin: auto;
