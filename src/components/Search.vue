@@ -48,7 +48,7 @@
       </table>
       <div class="pagination_buttons">
         <button v-if="currentPage>1" id="previous" v-on:click="loadPage(0)"> &lt; PREVIOUS</button>
-        <p id="page">page {{this.currentPage}} of {{Math.round(this.numberPassages/this.limit)}}</p>
+        <p id="page">page {{this.currentPage}} of {{Math.round(this.numberPassages/this.apiLimit)}}</p>
         <button id="next" v-on:click="loadPage(1)">NEXT &gt;</button>
       </div>
     </section>
